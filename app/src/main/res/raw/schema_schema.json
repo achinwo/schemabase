@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {"property_name": {"type": "string", "enum":["string", "number"]}}
+      }
+    }
+  }
+}

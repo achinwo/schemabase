@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <item name="key_json_value_getter" type="id"/>
+    <item name="key_id_map" type="id"/>
+</resources>
