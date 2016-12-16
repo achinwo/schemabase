@@ -1,7 +1,8 @@
 package com.curiousitylabs.schemabase.models;
 
-import com.google.firebase.database.DataSnapshot;
+import com.curiousitylabs.schemabase.SchemabaseClient;
 import com.google.firebase.database.Exclude;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.Date;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 // [START blog_user_class]
 @IgnoreExtraProperties
-public class User extends Model {
+public class User extends Model<User> {
 
 
     public String name;
@@ -20,6 +21,16 @@ public class User extends Model {
 
     public User(){
 
+    }
+
+    @Override
+    public SchemabaseClient.DbValueRef<User> write() {
+        String key = getUid();
+        if(key == null){
+            key = FirebaseDatabase.getInstance().getReference("schemas").getKey();
+        }
+
+        return new SchemabaseClient.DbValueRef<>(SchemabaseClient.Verb.POST, this, User.class, "users", key);
     }
 
     public User(String name, String email) {

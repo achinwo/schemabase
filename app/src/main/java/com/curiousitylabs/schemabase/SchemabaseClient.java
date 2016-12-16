@@ -3,6 +3,7 @@ package com.curiousitylabs.schemabase;
 
 import android.util.Log;
 
+import com.curiousitylabs.schemabase.models.Model;
 import com.curiousitylabs.schemabase.models.Schema;
 import com.curiousitylabs.schemabase.models.User;
 import com.google.common.base.Joiner;
@@ -26,22 +27,25 @@ public class SchemabaseClient {
     }
 
     public DbValueRef<User> getUserById(String uid){
-        return new DbValueRef<>(DbRef.Verb.GET, User.class, "users", uid);
+        return new DbValueRef<>(Verb.GET, User.class, "users", uid);
     }
 
     public DbChildRef<Schema> getSchemas(){
-        return new DbChildRef<>(DbRef.Verb.GET, Schema.class, "schemas");
+        return new DbChildRef<>(Verb.GET, Schema.class, "schemas");
     }
 
     public DbValueRef<Schema> getSchemaById(String id){
-        return new DbValueRef<>(DbRef.Verb.GET, Schema.class, "schemas", id);
+        return new DbValueRef<>(Verb.GET, Schema.class, "schemas", id);
     }
-
 
     // Helper Classes
 
     enum DbRefEventType {
         CHILD_ADDED, CHILD_REMOVED, CHILD_CHANGED, CHILD_MOVED, DATA_CHANGE, CANCELLED
+    }
+
+    public enum Verb {
+        GET, POST, PUT
     }
 
     public static abstract class Callback<T> {
@@ -57,6 +61,11 @@ public class SchemabaseClient {
 
         public void processSnapshot(DbRefEventType eventType, Class<T> clazz, DataSnapshot dataSnapshot, String previousChildName){
             T model = dataSnapshotToModel(dataSnapshot, clazz);
+
+            if(model instanceof Model){
+                ((Model) model).setUid(dataSnapshot.getKey());
+            }
+
             onData(eventType, model, previousChildName);
         }
 
@@ -74,10 +83,6 @@ public class SchemabaseClient {
 
         public String TAG() {
             return this.getClass().getSimpleName();
-        }
-
-        enum Verb {
-            GET, POST, PUT
         }
 
         String[] pathFragments;
@@ -118,8 +123,9 @@ public class SchemabaseClient {
                     callback.onError(databaseError);
                 }
             };
-
             reference.addListenerForSingleValueEvent(listener);
+
+
         }
 
         public abstract CancellationTokenSource subscribe(final Callback<T> callback);
@@ -179,8 +185,33 @@ public class SchemabaseClient {
 
     public static class DbValueRef<T> extends DbRef<T> {
 
+        Object payload;
+
         public DbValueRef(Verb verb, Class<T> clazz, String... pathFragments) {
             super(verb, clazz, pathFragments);
+        }
+
+        public DbValueRef(Verb verb, Object payload, Class<T> clazz, String... pathFragments) {
+            super(verb, clazz, pathFragments);
+            this.payload = payload;
+        }
+
+        @Override
+        public void then(final Callback<T> callback) {
+            if(verb == Verb.GET) {
+                super.then(callback);
+            } else if(verb == Verb.POST || verb == Verb.PUT) {
+                getRef().setValue(this, new DatabaseReference.CompletionListener() {
+                    @Override
+                    public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                        if(databaseError == null) {
+                            callback.onData(DbRefEventType.DATA_CHANGE, clazz.cast(payload), null);
+                        }else{
+                            callback.onError(databaseError);
+                        }
+                    }
+                });
+            }
         }
 
         public CancellationTokenSource subscribe(final Callback<T> callback){
