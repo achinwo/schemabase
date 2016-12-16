@@ -175,15 +175,18 @@ public class SchemaBaseActivity extends AppCompatActivity {
         return appState;
     }
 
-    private ProgressDialog mProgressDialog;
+    protected ProgressDialog mProgressDialog;
 
     public void showProgressDialog() {
+        showProgressDialog("Loading...");
+    }
+
+    public void showProgressDialog(String message) {
         if (mProgressDialog == null) {
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setCancelable(false);
-            mProgressDialog.setMessage("Loading...");
+            mProgressDialog.setMessage(message);
         }
-
         mProgressDialog.show();
     }
 

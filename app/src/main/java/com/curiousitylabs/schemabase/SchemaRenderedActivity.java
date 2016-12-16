@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.curiousitylabs.schemabase.Utils.setJsonObjectByPath;
 
@@ -33,6 +34,8 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
     public static final String KEY_MODEL_SCHEMA = "model_schema";
     public static final int KEY_VALUE_TAG = R.id.key_json_value_getter;
     public static final String KEY_MODEL_DATA = "instance_data";
+    public static final String KEY_SAVE_PREVIEW = "save_preview";
+    public static final String KEY_RESULT_PREVIEW_IMAGE = "result_image_file_name";
 
     private JSONObject jsonSchema;
     private JSONObject jsonData;
@@ -88,12 +91,12 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
     protected HashMap<String, Integer> idMap = new HashMap<>();
 
-    private String saveToInternalStorage(Bitmap bitmapImage, String imageFileName){
+    private String saveToInternalStorage(Bitmap bitmapImage){
         ContextWrapper cw = new ContextWrapper(getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
         File directory = cw.getDir("rendered_schema_images", Context.MODE_PRIVATE);
         // Create imageDir
-        File mypath = new File(directory, imageFileName);
+        File mypath = new File(directory, String.format("%s.png", UUID.randomUUID().toString()));
 
         FileOutputStream fos = null;
         try {
@@ -129,7 +132,17 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
         }
 
         Log.d(TAG(), "result:" + result.toString());
-        setResult(Activity.RESULT_OK, new Intent().putExtra(KEY_RESULT_JSON, result.toString()));
+
+        Intent resultIntent  = new Intent().putExtra(KEY_RESULT_JSON, result.toString());
+
+        if(getIntent().getBooleanExtra(KEY_SAVE_PREVIEW, false)){
+            Bitmap image = Utils.getBitmapFromView(bodyContainer);
+            String imageFileName = saveToInternalStorage(image);
+            Log.d(TAG(), "saved preview image: " + imageFileName);
+            resultIntent.putExtra(KEY_RESULT_PREVIEW_IMAGE, imageFileName);
+        }
+
+        setResult(Activity.RESULT_OK, resultIntent);
         finish();
     }
 

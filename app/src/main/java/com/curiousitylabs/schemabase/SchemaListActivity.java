@@ -3,6 +3,7 @@ package com.curiousitylabs.schemabase;
 import android.content.Context;
 import android.content.Intent;
 import android.databinding.ObservableArrayList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.RecyclerView;
@@ -16,6 +17,11 @@ import android.widget.TextView;
 import com.curiousitylabs.schemabase.models.Schema;
 import com.google.firebase.auth.FirebaseAuth;
 
+import org.jdeferred.AlwaysCallback;
+import org.jdeferred.DoneCallback;
+import org.jdeferred.FailCallback;
+import org.jdeferred.ProgressCallback;
+import org.jdeferred.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -142,6 +148,7 @@ public class SchemaListActivity extends SchemaBaseActivity {
         Intent startActivityIntent = new Intent(this, SchemaRenderedActivity.class);
 
         startActivityIntent.putExtra(SchemaRenderedActivity.KEY_MODEL_NAME, "Schema");
+        startActivityIntent.putExtra(SchemaRenderedActivity.KEY_SAVE_PREVIEW, true);
 
 
         String schema = loadJSONFromAsset(Schema.JSON_SCHEMA_RES_ID);
@@ -156,15 +163,45 @@ public class SchemaListActivity extends SchemaBaseActivity {
                     @Override
                     public void onOk(Intent data) {
                         String json = data.getStringExtra(SchemaRenderedActivity.KEY_RESULT_JSON);
-                        Schema s = Schema.fromJson(json);
-                        Log.d(TAG(), "result for create:" + s.getName() + "  isNew="+s.isNew());
+                        String imageFileName = data.getStringExtra(SchemaRenderedActivity.KEY_RESULT_PREVIEW_IMAGE);
+                        final Schema newSchema = Schema.fromJson(json);
+                        Log.d(TAG(), "result for create:" + newSchema.getName() + "  isNew="+newSchema.isNew() + " imageFileName=" + imageFileName);
+                        showProgressDialog(String.format("Saving schema \"%s\"", newSchema.getName()));
+                        mProgressDialog.setProgress(0);
 
-                        s.write().then(new SchemabaseClient.Callback<Schema>() {
-                            @Override
-                            public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
-                                Log.d(TAG(), "saved schema:" + model.getName() + "  isNew=" + model.isNew() +" uid="+model.getUid());
-                            }
-                        });
+                        getClient()
+                                .uploadFile(imageFileName, "images")
+                                .then(new DoneCallback<Uri>() {
+                                    @Override
+                                    public void onDone(Uri result) {
+                                        newSchema.imageUrl = result.toString();
+                                    }
+                                })
+                                .progress(new ProgressCallback<Double>() {
+                                    @Override
+                                    public void onProgress(Double progress) {
+                                        mProgressDialog.setProgress(progress.intValue());
+                                    }
+                                })
+                                .fail(new FailCallback<Exception>() {
+                                    @Override
+                                    public void onFail(Exception error) {
+                                        Log.e(TAG(), "image upload failed!", error);
+                                    }
+                                })
+                                .always(new AlwaysCallback<Uri, Exception>() {
+                                    @Override
+                                    public void onAlways(Promise.State state, Uri resolved, Exception rejected) {
+                                        hideProgressDialog();
+
+                                        newSchema.write().then(new SchemabaseClient.Callback<Schema>() {
+                                            @Override
+                                            public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
+                                                Log.d(TAG(), "saved schema:" + model.getName() + "  isNew=" + model.isNew() +" uid="+model.getUid()+" image="+model.getImageUrl());
+                                            }
+                                        });
+                                    }
+                                });
 
                     }
                 });
@@ -192,11 +229,11 @@ public class SchemaListActivity extends SchemaBaseActivity {
         CancellationTokenSource subTokenSource = getClient()
                 .getSchemas()
                 .subscribe(new SchemabaseClient.Callback<Schema>() {
-            @Override
-            public void onData(SchemabaseClient.DbRefEventType eventType, Schema schema, String previousUid) {
-                Log.d(TAG(), String.format("[%s]: first=%s", eventType, schema.getName()));
-            }
-        });
+                    @Override
+                    public void onData(SchemabaseClient.DbRefEventType eventType, Schema schema, String previousUid) {
+                        Log.d(TAG(), String.format("[%s]: first=%s", eventType, schema.getName()));
+                    }
+                });
 
         subTokenSource.cancelAfter(3000);
     }

@@ -1,11 +1,15 @@
 package com.curiousitylabs.schemabase;
 
 
+import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.curiousitylabs.schemabase.models.Model;
 import com.curiousitylabs.schemabase.models.Schema;
 import com.curiousitylabs.schemabase.models.User;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.common.base.Joiner;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -13,6 +17,16 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import org.jdeferred.Deferred;
+import org.jdeferred.Promise;
+import org.jdeferred.impl.DeferredObject;
+
+import java.io.File;
 
 import bolts.CancellationTokenSource;
 
@@ -26,6 +40,12 @@ public class SchemabaseClient {
         return this.getClass().getSimpleName();
     }
 
+    StorageReference storageRef;
+
+    public SchemabaseClient(){
+        storageRef = FirebaseStorage.getInstance().getReferenceFromUrl("gs://schemabase-3c550.appspot.com");
+    }
+
     public DbValueRef<User> getUserById(String uid){
         return new DbValueRef<>(Verb.GET, User.class, "users", uid);
     }
@@ -36,6 +56,39 @@ public class SchemabaseClient {
 
     public DbValueRef<Schema> getSchemaById(String id){
         return new DbValueRef<>(Verb.GET, Schema.class, "schemas", id);
+    }
+
+    public Promise<Uri, Exception, Double> uploadFile(String imageFileName, String...dirPathFragments) {
+        final DeferredObject<Uri, Exception, Double> deferred = new DeferredObject<>();
+
+        Uri file = Uri.fromFile(new File(imageFileName));
+        String dirPath = Joiner.on('/').join(dirPathFragments);
+        String remoteFileName = dirPath + "/" + file.getLastPathSegment();
+
+        Log.d(TAG(), String.format("uploading local file \'%s\' to remote location \'%s\'", imageFileName, remoteFileName));
+        StorageReference riversRef = storageRef.child(remoteFileName);
+        UploadTask uploadTask = riversRef.putFile(file);
+
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                deferred.reject(exception);
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                deferred.resolve(downloadUrl);
+            }
+        }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                deferred.notify(progress);
+            }
+        });
+        return deferred.promise();
     }
 
     // Helper Classes
