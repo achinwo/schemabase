@@ -201,7 +201,7 @@ public class SchemabaseClient {
             if(verb == Verb.GET) {
                 super.then(callback);
             } else if(verb == Verb.POST || verb == Verb.PUT) {
-                getRef().setValue(this, new DatabaseReference.CompletionListener() {
+                getRef().setValue(payload, new DatabaseReference.CompletionListener() {
                     @Override
                     public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
                         if(databaseError == null) {

@@ -52,7 +52,7 @@ dependencies {
     compile 'com.parse.bolts:bolts-applinks:1.4.0'
     compile 'org.jdeferred:jdeferred-android-aar:1.2.4'
 
-    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'com.google.code.gson:gson:2.8.0'
     compile 'com.mcxiaoke.volley:library:1.0.19'
     compile group: 'com.google.guava', name: 'guava', version: '18.0'
 }

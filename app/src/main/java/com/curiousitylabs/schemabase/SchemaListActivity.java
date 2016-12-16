@@ -4,17 +4,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.databinding.ObservableArrayList;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
+
 import com.curiousitylabs.schemabase.models.Schema;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -64,18 +62,41 @@ public class SchemaListActivity extends SchemaBaseActivity {
 
         schemaRecyclerViewAdapter = new Utils.RecyclerViewAdapter<>(getAppState().schemas, new Utils.ViewAdapter<Schema>(R.layout.schema_list_content) {
 
-
             @NotNull
             @Override
             public HashMap<String, View> createViewMap(View view) {
                 HashMap<String, View> mapper = new HashMap<>();
                 mapper.put("textView", view.findViewById(R.id.schema_name));
+                mapper.put("view", view);
                 return mapper;
             }
 
             @Override
-            public void onBindView(HashMap<String, View> viewMap, Schema item, int position) {
-                ((TextView) viewMap.get("textView")).setText(item.getName());
+            public void onBindView(HashMap<String, View> viewMap, final Schema item, int position) {
+                View view = viewMap.get("view");
+                TextView txtView = (TextView) viewMap.get("textView");
+                txtView.setText(item.getName());
+
+                view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (mTwoPane) {
+                            Bundle arguments = new Bundle();
+                            arguments.putSerializable(SchemaDetailFragment.ARG_ITEM_ID, item);
+                            SchemaDetailFragment fragment = new SchemaDetailFragment();
+                            fragment.setArguments(arguments);
+                            getSupportFragmentManager().beginTransaction()
+                                    .replace(R.id.schema_detail_container, fragment)
+                                    .commit();
+                        } else {
+                            Context context = v.getContext();
+                            Intent intent = new Intent(context, SchemaDetailActivity.class);
+                            intent.putExtra(SchemaDetailFragment.ARG_ITEM_ID, item);
+
+                            context.startActivity(intent);
+                        }
+                    }
+                });
             }
 
         });
@@ -101,7 +122,10 @@ public class SchemaListActivity extends SchemaBaseActivity {
             public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
                 ObservableArrayList<Schema> schemas = getAppState().schemas;
 
-                schemas.add(model);
+                if(!schemas.contains(model)){
+                    schemas.add(model);
+                }
+
             }
         });
         schemaRecyclerViewAdapter.registerObserver();
@@ -115,28 +139,35 @@ public class SchemaListActivity extends SchemaBaseActivity {
     }
 
     public void showCreateTodoForm(View view){
-        Intent startCrud = new Intent(this, SchemaRenderedActivity.class);
+        Intent startActivityIntent = new Intent(this, SchemaRenderedActivity.class);
 
-        startCrud.putExtra(SchemaRenderedActivity.KEY_MODEL_NAME, "todo");
+        startActivityIntent.putExtra(SchemaRenderedActivity.KEY_MODEL_NAME, "Schema");
 
 
         String schema = loadJSONFromAsset(Schema.JSON_SCHEMA_RES_ID);
 
         //Log.d(TAG, "id:" + Venue.JSON_SCHEMA_RES_ID+ " jsonSchema:"+schema);
-        startCrud.putExtra(SchemaRenderedActivity.KEY_MODEL_SCHEMA, schema);
+        startActivityIntent.putExtra(SchemaRenderedActivity.KEY_MODEL_SCHEMA, schema);
 
 
-        startActivityForResult(startCrud, null)
+        startActivityForResult(startActivityIntent, null)
                 .then(new Thenable() {
 
                     @Override
                     public void onOk(Intent data) {
                         String json = data.getStringExtra(SchemaRenderedActivity.KEY_RESULT_JSON);
-                        Log.d(TAG(), "result for create:" + json);
+                        Schema s = Schema.fromJson(json);
+                        Log.d(TAG(), "result for create:" + s.getName() + "  isNew="+s.isNew());
+
+                        s.write().then(new SchemabaseClient.Callback<Schema>() {
+                            @Override
+                            public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
+                                Log.d(TAG(), "saved schema:" + model.getName() + "  isNew=" + model.isNew() +" uid="+model.getUid());
+                            }
+                        });
+
                     }
                 });
-
-
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.curiousitylabs.schemabase.view_builders;
 
 import android.view.View;
+import android.widget.TextView;
 
 import com.curiousitylabs.schemabase.SchemaBaseActivity;
 
@@ -18,6 +19,8 @@ public class ArraySchemaViewBuilder extends SchemaViewBuilder {
 
     @Override
     public View createView() {
-        return null;
+        TextView tv = new TextView(context);
+        tv.setText("ARRAY");
+        return tv;
     }
 }

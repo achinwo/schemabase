@@ -146,8 +146,8 @@ public class SchemaBaseActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        switch(requestCode){
+        Log.d(TAG(), String.format("thens=%s, reqCode=%s, resCode=%s, ok=%s", thens, requestCode, resultCode, Activity.RESULT_OK));
+        switch(resultCode){
             case Activity.RESULT_CANCELED:
                 thens.remove(requestCode).onCancelled(data);
                 break;
@@ -157,6 +157,8 @@ public class SchemaBaseActivity extends AppCompatActivity {
             case Activity.RESULT_OK:
                 thens.remove(requestCode).onOk(data);
                 break;
+            default:
+                Log.e(TAG(), "unrecognised result code: " + resultCode);
         }
 
     }

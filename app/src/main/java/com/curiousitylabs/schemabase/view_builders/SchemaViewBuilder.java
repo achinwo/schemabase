@@ -162,6 +162,9 @@ public abstract class SchemaViewBuilder {
                     view = new NumberSchemaViewBuilder(ctx, jsonSchema, jsonData, newPath).build();
 
                     break;
+                case ARRAY:
+                    view = new ArraySchemaViewBuilder(ctx, jsonSchema, jsonData, newPath).build();
+                    break;
             }
             idMap.put(Joiner.on(".").join(newPath), view.getId());
 

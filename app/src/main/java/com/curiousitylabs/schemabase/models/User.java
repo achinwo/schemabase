@@ -5,6 +5,8 @@ import com.google.firebase.database.Exclude;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +57,11 @@ public class User extends Model<User> {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public int compareTo(@NotNull User user) {
+        return this.getUid().compareTo(user.getUid());
     }
 }
 // [END blog_user_class]
