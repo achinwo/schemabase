@@ -84,11 +84,11 @@ public class StringSchemaViewBuilder extends SchemaViewBuilder {
             layout.addView(spinner);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                Utils.Layout.alignParent(label, RelativeLayout.ALIGN_PARENT_START);
-                Utils.Layout.alignParent(spinner, RelativeLayout.ALIGN_PARENT_END);
+                Utils.Layout.addRules(label, RelativeLayout.ALIGN_PARENT_START);
+                Utils.Layout.addRules(spinner, RelativeLayout.ALIGN_PARENT_END);
             }else{
-                Utils.Layout.alignParent(label, RelativeLayout.ALIGN_PARENT_LEFT);
-                Utils.Layout.alignParent(spinner, RelativeLayout.ALIGN_PARENT_RIGHT);
+                Utils.Layout.addRules(label, RelativeLayout.ALIGN_PARENT_LEFT);
+                Utils.Layout.addRules(spinner, RelativeLayout.ALIGN_PARENT_RIGHT);
             }
             Utils.Layout.alignBaseLine(label, spinner);
 

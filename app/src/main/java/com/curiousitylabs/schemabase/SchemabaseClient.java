@@ -58,8 +58,8 @@ public class SchemabaseClient {
         return new DbValueRef<>(Verb.GET, Schema.class, "schemas", id);
     }
 
-    public Promise<Uri, Exception, Double> uploadFile(String imageFileName, String...dirPathFragments) {
-        final DeferredObject<Uri, Exception, Double> deferred = new DeferredObject<>();
+    public Promise<String, Exception, Double> uploadFile(String imageFileName, String...dirPathFragments) {
+        final DeferredObject<String, Exception, Double> deferred = new DeferredObject<>();
 
         Uri file = Uri.fromFile(new File(imageFileName));
         String dirPath = Joiner.on('/').join(dirPathFragments);
@@ -78,7 +78,7 @@ public class SchemabaseClient {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                String downloadUrl = taskSnapshot.getMetadata().getPath();
                 deferred.resolve(downloadUrl);
             }
         }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {

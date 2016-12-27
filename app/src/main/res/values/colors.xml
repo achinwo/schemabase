@@ -3,4 +3,10 @@
     <color name="colorPrimary">#33691e</color>
     <color name="colorPrimaryDark">#5a793c</color>
     <color name="colorAccent">#FCE7A7</color>
+
+    <color name="teal">#009688</color>
+    <color name="black_87">#DD000000</color>
+    <color name="black_54">#89000000</color>
+    <color name="quoteBg">#c8e6c9</color>
+    <color name="muted">#9E9E9E</color>
 </resources>

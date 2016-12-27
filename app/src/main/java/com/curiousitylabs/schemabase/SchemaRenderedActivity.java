@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.widget.Toolbar;
@@ -32,6 +33,7 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
     public static final String KEY_RESULT_JSON = "result_json";
     public static final String KEY_MODEL_NAME = "model_name";
     public static final String KEY_MODEL_SCHEMA = "model_schema";
+    public static final String KEY_STYLE_OPTIONS = "style_options";
     public static final int KEY_VALUE_TAG = R.id.key_json_value_getter;
     public static final String KEY_MODEL_DATA = "instance_data";
     public static final String KEY_SAVE_PREVIEW = "save_preview";
@@ -39,6 +41,7 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
     private JSONObject jsonSchema;
     private JSONObject jsonData;
+    private JSONObject jsonStyleOpts;
     public CoordinatorLayout mainView;
     public LinearLayout bodyContainer;
 
@@ -53,6 +56,7 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
         String jsonString = getIntent().getStringExtra(KEY_MODEL_SCHEMA);
         String jsonDataString = getIntent().getStringExtra(KEY_MODEL_DATA);
+        String jsonStyleString = getIntent().getStringExtra(KEY_STYLE_OPTIONS);
 
         setContentView(R.layout.activity_schema_rendered);
 
@@ -61,6 +65,12 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
         try {
             if (jsonDataString != null) jsonData = new JSONObject(jsonDataString);
+
+            if (jsonStyleString != null) {
+                jsonStyleOpts = new JSONObject(jsonStyleString);
+            }else{
+                jsonStyleOpts = new JSONObject();
+            }
 
             jsonSchema = new JSONObject(jsonString);
             Log.d(TAG(), "JSON: " + jsonString);
@@ -75,8 +85,13 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
             bodyContainer.addView(view);
 
+            String color = jsonStyleOpts.optString("background");
+            if(color != null){
+                bodyContainer.setBackgroundColor(Color.parseColor(color));
+            }
+
         } catch (Exception e) {
-            Log.e(TAG(), e.toString());
+            Log.e(TAG(), "Error building schema view", e);
         }
 
         bodyContainer.requestLayout();
@@ -104,7 +119,7 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
             // Use the compress method on the BitMap object to write image to the OutputStream
             bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG(), e.toString());
         } finally {
             try {
                 fos.close();

@@ -13,6 +13,7 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
 import com.curiousitylabs.schemabase.models.Schema;
 import com.curiousitylabs.schemabase.models.User;
+import com.firebase.ui.storage.images.FirebaseImageLoader;
 
 /**
  * Created by anthony on 29/04/16.
@@ -39,6 +40,7 @@ public class AppState {
 
     public RequestQueue mRequestQueue;
     public ImageLoader mImageLoader;
+    public FirebaseImageLoader mFbImageLoader;
 
     private SchemabaseClient mClient;
 
@@ -68,6 +70,7 @@ public class AppState {
         session = mApp.getSharedPreferences(APP_SESSION, Context.MODE_PRIVATE);
 
         mConnManager = (ConnectivityManager) mApp.getSystemService(Context.CONNECTIVITY_SERVICE);
+        mFbImageLoader = new FirebaseImageLoader();
 
         mRequestQueue = Volley.newRequestQueue(mApp);
         mImageLoader = new ImageLoader(mRequestQueue, new ImageLoader.ImageCache() {

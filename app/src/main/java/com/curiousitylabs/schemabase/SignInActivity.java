@@ -52,6 +52,12 @@ public class SignInActivity extends SchemaBaseActivity implements View.OnClickLi
         // Views
         mEmailField = (EditText) findViewById(R.id.field_email);
         mPasswordField = (EditText) findViewById(R.id.field_password);
+
+        if(BuildConfig.DEBUG){
+            mEmailField.setText("demo@example.com");
+            mPasswordField.setText("password");
+        }
+
         mSignInButton = (Button) findViewById(R.id.button_sign_in);
         mSignUpButton = (Button) findViewById(R.id.button_sign_up);
         findViewById(R.id.sign_in_button).setOnClickListener(this);

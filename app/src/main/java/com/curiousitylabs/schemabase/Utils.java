@@ -1,17 +1,29 @@
 package com.curiousitylabs.schemabase;
 
+import android.content.Context;
 import android.databinding.ObservableArrayList;
 import android.databinding.ObservableList;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
+import android.graphics.drawable.shapes.Shape;
+import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
+import android.widget.SimpleAdapter;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -23,6 +35,10 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
 
 /**
  * Created by anthony on 12/12/2016.
@@ -122,6 +138,15 @@ public class Utils {
         return returnedBitmap;
     }
 
+    public static ShapeDrawable createBorder(Shape shape, Float strokeWidth, @ColorInt Integer color, Paint.Style style){
+        ShapeDrawable shapedrawable = new ShapeDrawable();
+        shapedrawable.setShape(shape == null ? new RectShape() : shape);
+        shapedrawable.getPaint().setColor(color == null ? Color.RED : color);
+        shapedrawable.getPaint().setStrokeWidth(strokeWidth == null ? 10f : strokeWidth);
+        shapedrawable.getPaint().setStyle(style == null ? Paint.Style.STROKE : style);
+        return shapedrawable;
+    }
+
     public static class Layout {
 
         public static void alignBaseLine(View label, View spinner) {
@@ -130,7 +155,13 @@ public class Utils {
             label.setLayoutParams(params);
         }
 
-        public static void alignParent(View view, Integer...rules) {
+        public static void addRule(View view1, View view2, Integer rule){
+            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) view1.getLayoutParams();
+            params.addRule(rule, view2.getId());
+            view1.setLayoutParams(params);
+        }
+
+        public static void addRules(View view, Integer...rules) {
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) view.getLayoutParams();
 
             for (Integer rule :
@@ -139,17 +170,55 @@ public class Utils {
             }
             view.setLayoutParams(params);
         }
+
+        public static void setMargin(View view, Integer left, Integer top, Integer right, Integer bottom){
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+
+            params.leftMargin = left == null ? params.leftMargin : left;
+            params.topMargin = top == null ? params.topMargin : top;
+            params.rightMargin = right == null ? params.rightMargin : right;
+            params.bottomMargin = bottom == null ? params.bottomMargin : bottom;
+            view.setLayoutParams(params);
+        }
+
+        public static void setMargin(View view, Integer all){
+            setMargin(view, all, all, all, all);
+        }
+
+        public static void setDimensions(View view, int width, int height){
+            ViewGroup.LayoutParams params = view.getLayoutParams();
+            params.height = height;
+            params.width = width;
+            view.setLayoutParams(params);
+        }
     }
 
     public abstract static class ViewAdapter<T> {
 
         public int layoutResId = -1;
+        public int selectedPosition = -1;
+        public RecyclerView.Adapter rvBaseAdapter;
 
         public ViewAdapter(int layoutResId){
             this.layoutResId = layoutResId;
         }
 
         public ViewAdapter(){
+        }
+
+        public void setSelectedPosition(int selectedPosition) {
+            if(rvBaseAdapter == null){
+                this.selectedPosition = selectedPosition;
+
+            }else{
+                if(this.selectedPosition >= 0) rvBaseAdapter.notifyItemChanged(this.selectedPosition);
+                this.selectedPosition = selectedPosition;
+                if(selectedPosition >= 0) rvBaseAdapter.notifyItemChanged(selectedPosition);
+            }
+        }
+
+        public int getSelectedPosition() {
+            return selectedPosition;
         }
 
         public View createView(ViewGroup parent, int viewType){
@@ -160,6 +229,70 @@ public class Utils {
         public abstract HashMap<String, View> createViewMap(View view);
         public abstract void onBindView(HashMap<String, View> viewMap, T item, int position);
 
+    }
+
+    public static class SchemaListAdapter<T> extends ArrayAdapter<T> {
+
+        public ObservableList.OnListChangedCallback<ObservableArrayList<T>> callback = new ObservableList.OnListChangedCallback<ObservableArrayList<T>>(){
+            @Override
+            public void onChanged(ObservableArrayList<T> item) {
+                SchemaListAdapter.this.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onItemRangeChanged(ObservableArrayList<T> item, int positionStart, int itemCount) {
+                SchemaListAdapter.this.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onItemRangeInserted(ObservableArrayList<T> item, int positionStart, int itemCount) {
+                SchemaListAdapter.this.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onItemRangeMoved(ObservableArrayList<T> item, int fromPosition, int toPosition, int itemCount) {
+                SchemaListAdapter.this.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onItemRangeRemoved(ObservableArrayList<T> item, int positionStart, int itemCount) {
+                SchemaListAdapter.this.notifyDataSetChanged();
+            }
+        };
+
+        private ObservableArrayList<T> mValues;
+        public ViewAdapter<T> viewAdapter;
+
+        public SchemaListAdapter(Context context, ObservableArrayList<T> items, ViewAdapter<T> viewAdapter) {
+            super(context, -1, items);
+            this.mValues = items;
+            this.viewAdapter = viewAdapter;
+        }
+
+
+        public void registerObserver(){
+            mValues.addOnListChangedCallback(callback);
+        }
+
+        public void unregisterObserver(){
+            mValues.removeOnListChangedCallback(callback);
+        }
+
+        @Override
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+            View row = convertView;
+            RecyclerViewAdapter.ViewHolder<T> holder;
+            if(row == null){
+                row = viewAdapter.createView(parent, -1);
+                HashMap<String, View> viewMap = viewAdapter.createViewMap(row);
+                holder = new RecyclerViewAdapter.ViewHolder<>(row, viewMap);
+                row.setTag(R.id.key_view_holder, holder);
+            }else{
+                holder = (RecyclerViewAdapter.ViewHolder<T>) row.getTag(R.id.key_view_holder);
+            }
+            viewAdapter.onBindView(holder.viewMap, mValues.get(position), position);
+            return row;
+        }
     }
 
     public static class RecyclerViewAdapter<T> extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder<T>> {
@@ -197,6 +330,7 @@ public class Utils {
         public RecyclerViewAdapter(ObservableArrayList<T> items, ViewAdapter<T> viewAdapter) {
             mValues = items;
             this.viewAdapter = viewAdapter;
+            this.viewAdapter.rvBaseAdapter = this;
             registerObserver();
         }
 

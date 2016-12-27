@@ -3,19 +3,26 @@ package com.curiousitylabs.schemabase;
 import android.content.Context;
 import android.content.Intent;
 import android.databinding.ObservableArrayList;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.curiousitylabs.schemabase.models.Schema;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.jdeferred.AlwaysCallback;
 import org.jdeferred.DoneCallback;
@@ -42,9 +49,8 @@ public class SchemaListActivity extends SchemaBaseActivity {
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
-    private boolean mTwoPane;
     protected CancellationTokenSource schemasTS;
-    protected Utils.RecyclerViewAdapter<Schema> schemaRecyclerViewAdapter;
+    protected Utils.SchemaListAdapter<Schema> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,13 +72,14 @@ public class SchemaListActivity extends SchemaBaseActivity {
 
 
 
-        schemaRecyclerViewAdapter = new Utils.RecyclerViewAdapter<>(getAppState().schemas, new Utils.ViewAdapter<Schema>(R.layout.schema_list_content) {
+        adapter = new Utils.SchemaListAdapter<>(this, getAppState().schemas, new Utils.ViewAdapter<Schema>(R.layout.schema_list_content) {
 
             @NotNull
             @Override
             public HashMap<String, View> createViewMap(View view) {
                 HashMap<String, View> mapper = new HashMap<>();
                 mapper.put("textView", view.findViewById(R.id.schema_name));
+                mapper.put("imageView", view.findViewById(R.id.imageView));
                 mapper.put("view", view);
                 return mapper;
             }
@@ -80,43 +87,95 @@ public class SchemaListActivity extends SchemaBaseActivity {
             @Override
             public void onBindView(HashMap<String, View> viewMap, final Schema item, int position) {
                 View view = viewMap.get("view");
+
                 TextView txtView = (TextView) viewMap.get("textView");
                 txtView.setText(item.getName());
+
+                String imageUrl = item.getImageUrl();
+
+                if(imageUrl != null && !imageUrl.startsWith("https")){
+                    ImageView imageView = (ImageView) viewMap.get("imageView");
+                    StorageReference storageReference = FirebaseStorage.getInstance().getReference(imageUrl);
+
+                    Glide.with(SchemaListActivity.this)
+                            .using(getAppState().mFbImageLoader)
+                            .load(storageReference)
+                            .into(imageView);
+                }
+
 
                 view.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if (mTwoPane) {
-                            Bundle arguments = new Bundle();
-                            arguments.putSerializable(SchemaDetailFragment.ARG_ITEM_ID, item);
-                            SchemaDetailFragment fragment = new SchemaDetailFragment();
-                            fragment.setArguments(arguments);
-                            getSupportFragmentManager().beginTransaction()
-                                    .replace(R.id.schema_detail_container, fragment)
-                                    .commit();
-                        } else {
                             Context context = v.getContext();
                             Intent intent = new Intent(context, SchemaDetailActivity.class);
                             intent.putExtra(SchemaDetailFragment.ARG_ITEM_ID, item);
 
                             context.startActivity(intent);
-                        }
                     }
                 });
+
+                view.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View view) {
+                        return false;
+                    }
+                });
+                //view.requestLayout();
             }
 
         });
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.schema_list);
-        assert recyclerView != null;
-        recyclerView.setAdapter(schemaRecyclerViewAdapter);
+        GridView gridView = (GridView) findViewById(R.id.schema_grid_view);
+        assert gridView != null;
+        gridView.setAdapter(adapter);
 
-        if (findViewById(R.id.schema_detail_container) != null) {
-            // The detail container view will be present only in the
-            // large-screen layouts (res/values-w900dp).
-            // If this view is present, then the
-            // activity should be in two-pane mode.
-            mTwoPane = true;
+        registerForContextMenu(gridView);
+    }
+
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.context_menu, menu);
+    }
+
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
+        String[] names = {"1", "2", "3", "4", "5", "6"};
+
+        switch(item.getItemId()) {
+
+            case R.id.editItem:
+                Toast.makeText(this, "You have chosen the " + "edit" +
+                                " context menu option for " + names[(int)info.id],
+                        Toast.LENGTH_SHORT).show();
+                return true;
+
+            case R.id.saveItem:
+                Toast.makeText(this, "You have chosen the save" +
+                                " context menu option for " + names[(int)info.id],
+                        Toast.LENGTH_SHORT).show();
+                return true;
+
+            case R.id.deleteItem:
+                adapter.remove(adapter.getItem(info.position));
+
+
+                Toast.makeText(this, "You have chosen the delete" +
+                                " context menu option for " + names[(int)info.id],
+                        Toast.LENGTH_SHORT).show();
+
+                return true;
+
+            case R.id.viewItem:
+
+                Toast.makeText(this, "You have chosen the view" +
+                                " context menu option for " + names[(int)info.id],
+                        Toast.LENGTH_SHORT).show();
+                return true;
+            default:
+                return super.onContextItemSelected(item);
         }
     }
 
@@ -127,27 +186,37 @@ public class SchemaListActivity extends SchemaBaseActivity {
             @Override
             public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
                 ObservableArrayList<Schema> schemas = getAppState().schemas;
+                switch(eventType){
+                    case CHILD_ADDED:
+                        if(!schemas.contains(model)){
+                            schemas.add(model);
+                        }
+                        break;
+                    case CHILD_REMOVED:
 
-                if(!schemas.contains(model)){
-                    schemas.add(model);
+                        Log.d(TAG(), "removed: " + schemas.remove(model));
+                        break;
+
                 }
+
 
             }
         });
-        schemaRecyclerViewAdapter.registerObserver();
+        adapter.registerObserver();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         schemasTS.cancel();
-        schemaRecyclerViewAdapter.unregisterObserver();
+        adapter.unregisterObserver();
     }
 
     public void showCreateTodoForm(View view){
         Intent startActivityIntent = new Intent(this, SchemaRenderedActivity.class);
 
         startActivityIntent.putExtra(SchemaRenderedActivity.KEY_MODEL_NAME, "Schema");
+        startActivityIntent.putExtra(SchemaRenderedActivity.KEY_STYLE_OPTIONS, "{\"background\":\"#FFFFFF\"}");
         startActivityIntent.putExtra(SchemaRenderedActivity.KEY_SAVE_PREVIEW, true);
 
 
@@ -171,10 +240,10 @@ public class SchemaListActivity extends SchemaBaseActivity {
 
                         getClient()
                                 .uploadFile(imageFileName, "images")
-                                .then(new DoneCallback<Uri>() {
+                                .then(new DoneCallback<String>() {
                                     @Override
-                                    public void onDone(Uri result) {
-                                        newSchema.imageUrl = result.toString();
+                                    public void onDone(String result) {
+                                        newSchema.imageUrl = result;
                                     }
                                 })
                                 .progress(new ProgressCallback<Double>() {
@@ -189,17 +258,29 @@ public class SchemaListActivity extends SchemaBaseActivity {
                                         Log.e(TAG(), "image upload failed!", error);
                                     }
                                 })
-                                .always(new AlwaysCallback<Uri, Exception>() {
+                                .always(new AlwaysCallback<String, Exception>() {
                                     @Override
-                                    public void onAlways(Promise.State state, Uri resolved, Exception rejected) {
+                                    public void onAlways(Promise.State state, String resolved, Exception rejected) {
                                         hideProgressDialog();
 
-                                        newSchema.write().then(new SchemabaseClient.Callback<Schema>() {
+//                                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+//                                            @Override
+//                                            public void run() {
+//                                                adapter.notifyDataSetChanged();
+
+                                        newSchema.write()
+                                                .then(new SchemabaseClient.Callback<Schema>() {
                                             @Override
                                             public void onData(SchemabaseClient.DbRefEventType eventType, Schema model, String previousUid) {
                                                 Log.d(TAG(), "saved schema:" + model.getName() + "  isNew=" + model.isNew() +" uid="+model.getUid()+" image="+model.getImageUrl());
+
+
+
+
                                             }
                                         });
+                                            //}
+                                              //  }, 1000);
                                     }
                                 });
 

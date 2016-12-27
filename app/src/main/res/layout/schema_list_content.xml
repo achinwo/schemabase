@@ -4,17 +4,122 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/id"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/text_margin"
-        android:textAppearance="?attr/textAppearanceListItem" />
+    <!--<TextView-->
+        <!--android:id="@+id/id"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_margin="@dimen/text_margin"-->
+        <!--android:textAppearance="?attr/textAppearanceListItem" />-->
 
-    <TextView
-        android:id="@+id/schema_name"
-        android:layout_width="wrap_content"
+    <android.support.v7.widget.CardView
+        style="@style/Widget.SampleDashboard.Card.NoPadding"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/text_margin"
-        android:textAppearance="?attr/textAppearanceListItem" />
+        android:orientation="vertical">
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="0dp"
+                android:layout_weight="2"
+                android:adjustViewBounds="true"
+                android:background="@color/black_54"
+                android:gravity="top"
+                android:padding="0dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/sample_4" />
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:padding="8dp"
+                android:layout_weight="8">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:id="@+id/schema_name"
+                    android:layout_alignParentTop="true"
+                    style="@style/Widget.SampleDashboard.Item.Description"
+                    android:textColor="@color/black_87"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:text="Hello this is a title that is very long and means nothing" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="visible"
+                    android:id="@+id/username_label"
+                    android:layout_below="@id/schema_name"
+
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:text="By "
+                    android:gravity="bottom|start"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/schema_name"
+                    android:id="@+id/username"
+                    android:gravity="start"
+                    android:layout_toEndOf="@id/username_label"
+                    android:layout_toRightOf="@id/username_label"
+                    android:layout_alignBaseline="@id/username_label"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:text="Obialo"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <!--<TextView-->
+                    <!--android:id="@+id/posted_at"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_alignBaseline="@id/username"-->
+                    <!--android:layout_toRightOf="@id/username"-->
+                    <!--android:gravity="end"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_alignParentRight="true"-->
+                    <!--android:layout_alignParentEnd="true"-->
+                    <!--android:layout_below="@id/schema_name"-->
+                    <!--android:text="about a moment ago"-->
+                    <!--android:textColor="@color/muted"-->
+                    <!--android:layout_marginBottom="4dp"-->
+                    <!--android:textSize="12sp" />-->
+
+
+                <!--<TextView-->
+                    <!--android:id="@+id/summary"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_alignParentLeft="true"-->
+                    <!--android:layout_alignParentStart="true"-->
+                    <!--android:layout_alignParentBottom="true"-->
+                    <!--android:layout_marginTop="8dp"-->
+                    <!--android:layout_below="@id/username"-->
+                    <!--android:maxLines="3"-->
+                    <!--android:ellipsize="end"-->
+                    <!--android:scrollHorizontally="false"-->
+                    <!--android:text="summary text here"-->
+                    <!--android:textColor="@color/muted"-->
+                    <!--android:layout_marginBottom="4dp"-->
+                    <!--android:textSize="12sp" />-->
+
+            </RelativeLayout>
+
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
 </LinearLayout>
