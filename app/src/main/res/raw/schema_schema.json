@@ -4,9 +4,9 @@
     "name": {
       "type": "string"
     },
-    "types": {
+    "fields": {
       "type": "array",
-      "items": {
+      "item": {
         "type": "object",
         "properties": {"property_name": {"type": "string", "enum":["string", "number"]}}
       }

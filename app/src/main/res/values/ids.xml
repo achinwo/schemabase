@@ -2,6 +2,7 @@
 <resources>
 
     <item name="key_json_value_getter" type="id"/>
+    <item name="key_json_value_setter" type="id"/>
     <item name="key_id_map" type="id"/>
     <item name="key_view_holder" type="id"/>
     <item name="array_view_add_btn" type="id" />

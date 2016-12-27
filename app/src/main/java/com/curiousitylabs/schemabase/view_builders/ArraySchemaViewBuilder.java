@@ -66,6 +66,10 @@ public class ArraySchemaViewBuilder extends SchemaViewBuilder implements View.On
 
     @Override
     public View createView() {
+        Log.d(TAG(), "JSON:" + Utils.getJsonObjectByPath(pathFragments, jsonSchema));
+        final JSONObject itemSchema = Utils.getJsonObjectByPath(pathFragments, jsonSchema).optJSONObject("item");
+        final String itemType = itemSchema.optString("type");
+
         TextView tv = new TextView(context);
         Button btn = new Button(context);
         Button removeBtn = new Button(context);
@@ -133,9 +137,7 @@ public class ArraySchemaViewBuilder extends SchemaViewBuilder implements View.On
 
             @Override
             public View createView(ViewGroup parent, int viewType) {
-                TextView tv = new TextView(context);
-                tv.setText("Item");
-                return tv;
+                return SchemaViewBuilder.viewForSchemaType(context, itemType, itemSchema, null);
             }
 
             @NotNull
@@ -148,8 +150,8 @@ public class ArraySchemaViewBuilder extends SchemaViewBuilder implements View.On
 
             @Override
             public void onBindView(HashMap<String, View> viewMap, Item item, final int position) {
-                TextView tv = (TextView) viewMap.get("view");
-                tv.setText(item.name);
+                View tv = viewMap.get("view");
+                //tv.setText(item.name);
 
                 if(getSelectedPosition() == position){
                     // Here I am just highlighting the background
@@ -170,6 +172,24 @@ public class ArraySchemaViewBuilder extends SchemaViewBuilder implements View.On
         lv.setAdapter(new Utils.RecyclerViewAdapter<>(items, adapter));
 
         rel.setBackground(Utils.createBorder(null, null, null, null));
+
+
+        rel.setTag(R.id.key_json_value_getter, new ValueGetter() {
+            @Override
+            public String jsonFromView(View myView) {
+                StringBuilder js = new StringBuilder("[");
+                for (int i = 0; i < items.size(); i++) {
+                    Item item = items.get(i);
+                    js.append('"');
+                    js.append(item.name);
+                    js.append('"');
+
+                    if(i != items.size() - 1) js.append(',');
+                }
+                js.append(']');
+                return js.toString();
+            }
+        });
         return rel;
     }
 }

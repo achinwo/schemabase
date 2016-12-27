@@ -121,7 +121,7 @@ public abstract class SchemaViewBuilder {
         List<String> keys = Lists.newArrayList(properties.keys());
 
         final LinearLayout layout = new LinearLayout(ctx);
-        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setOrientation(getParentType(jsonSchema, path) == SchemaType.ARRAY ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         layout.setId(ctx.generateViewId());
 
         final HashMap<String, Integer> idMap = new HashMap<>();
@@ -140,13 +140,12 @@ public abstract class SchemaViewBuilder {
                     View sep = new View(ctx);
 
                     layout.addView(sep);
-                    LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) sep.getLayoutParams();
-                    params.height = 1;
-                    params.width = LinearLayout.LayoutParams.MATCH_PARENT;
-                    params.topMargin = ctx.getResources().getDimensionPixelSize(R.dimen.activity_vertical_margin);
+                    Utils.Layout.setDimensions(sep, LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                    Utils.Layout.setMargin(sep, 0, ctx.getResources().getDimensionPixelSize(R.dimen.activity_vertical_margin), 0, 0);
                     sep.setBackgroundColor(Color.DKGRAY);
 
                     view = viewForObjectSchema(ctx, jsonSchema, jsonData, newPath);
+
 
                     HashMap<String, Integer> viewIdMap = (HashMap<String, Integer>) view.getTag(R.id.key_id_map);
                     if(viewIdMap != null){
@@ -188,6 +187,14 @@ public abstract class SchemaViewBuilder {
 
         layout.setTag(R.id.key_id_map, idMap);
         return layout;
+    }
+
+    public static SchemaType getParentType(JSONObject jsonSchema, String...path) {
+        if(path.length < 2) return null;
+
+        String[] pathFrags = Arrays.copyOfRange(path, 0, path.length - 2);
+        String typeName = getJsonObjectByPath(pathFrags, jsonSchema).optString("type", "");
+        return SchemaType.fromString(typeName);
     }
 
 

@@ -234,7 +234,7 @@ public class SchemaListActivity extends SchemaBaseActivity {
                         String json = data.getStringExtra(SchemaRenderedActivity.KEY_RESULT_JSON);
                         String imageFileName = data.getStringExtra(SchemaRenderedActivity.KEY_RESULT_PREVIEW_IMAGE);
                         final Schema newSchema = Schema.fromJson(json);
-                        Log.d(TAG(), "result for create:" + newSchema.getName() + "  isNew="+newSchema.isNew() + " imageFileName=" + imageFileName);
+                        Log.d(TAG(), "result from schema:" + json);
                         showProgressDialog(String.format("Saving schema \"%s\"", newSchema.getName()));
                         mProgressDialog.setProgress(0);
 
@@ -262,11 +262,6 @@ public class SchemaListActivity extends SchemaBaseActivity {
                                     @Override
                                     public void onAlways(Promise.State state, String resolved, Exception rejected) {
                                         hideProgressDialog();
-
-//                                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-//                                            @Override
-//                                            public void run() {
-//                                                adapter.notifyDataSetChanged();
 
                                         newSchema.write()
                                                 .then(new SchemabaseClient.Callback<Schema>() {

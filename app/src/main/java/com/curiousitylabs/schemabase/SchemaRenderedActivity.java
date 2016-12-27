@@ -108,7 +108,6 @@ public class SchemaRenderedActivity extends SchemaBaseActivity {
 
     private String saveToInternalStorage(Bitmap bitmapImage){
         ContextWrapper cw = new ContextWrapper(getApplicationContext());
-        // path to /data/data/yourapp/app_data/imageDir
         File directory = cw.getDir("rendered_schema_images", Context.MODE_PRIVATE);
         // Create imageDir
         File mypath = new File(directory, String.format("%s.png", UUID.randomUUID().toString()));
